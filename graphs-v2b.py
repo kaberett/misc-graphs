@@ -20,29 +20,24 @@ def dataHelper(dictname,first_line, line_in,posx,posxerr,posy,posyerr):
     return dictname
 
 def loadData(f,x,xerr,y,yerr):
-    # Sample structure:
-    # datadict = {"St. Helena": { x: [x1,...], xerr: [xerr1,...] y: [y1,...], yerr: [yerr1,...]}, 
-    #              "Gough": ...}
-    islands = {}
-
     first_line = f.readline().split(',')
-    print first_line
 
-    # TODO this is gross: sort it out!
-    # okay, I shouldn't actually need it at all - the only reason for it is 
-    # I'm not properly handling errors thrown 
-    posx    = None
-    posxerr = None
-    posy    = None
-    posyerr = None
+    # datadict = {"St. Helena": { "x": [x1,...], "xerr": [xerr1,...] "y": [y1,...], 
+    #                             "yerr" [yerr1,...]}, 
+    #             "Gough": ...}
+    islands = {}
 
     # determine positions of the stuff I care about
     posx    = first_line.index(x)
     if xerr is not None:
         posxerr = first_line.index(xerr)
+    else:
+        posxerr = None
     posy    = first_line.index(y)
     if yerr is not None:
         posyerr = first_line.index(yerr)
+    else:
+        posyerr = None
 
     # stick the data in the places
     for line in f:
@@ -61,8 +56,10 @@ def loadData(f,x,xerr,y,yerr):
 
 if __name__ == '__main__':
 
-    # TODO offer note on usage if insufficient arguments given;
-    # consider prompting?
+    if len(sys.argv) < 3:
+	    print >> sys.stderr, "Usage: %s file_in x y (xerr) (yerr)" % sys.argv[0]
+	    sys.exit(1)
+
     file_in = sys.argv[1]
     x = sys.argv[2]
     y = sys.argv[3]
@@ -75,39 +72,43 @@ if __name__ == '__main__':
     except IndexError:
         yerr = None
 
-    print xerr, yerr
+    figname = raw_input("Path to save file?")
+
+    #print xerr, yerr
 
     ###
     # actually do the thing (damn, I'm good at comments)
     ###
     with open(file_in, 'r') as f:
         islands = loadData(f,x,xerr,y,yerr)
-        print islands
+        #print islands
 
-#    symbols = ['bo','g+','rx','k^','k>','k<','kv','m2', '1','3','4']
-#    colours = ['b','g','r','k','k','k','k','m','0.75','0.75','0.75']
-#           
-#    fig = plt.figure()
-#    ax = plt.subplot(111)
-# 
-#    # plot a graaaaaaaaphs
-#    for i in range(len(islands)):
-#       #print islands[i][0],islands[i][1],islands[i][2]
-#       try:
-#           ax.plot(islands[i][0], islands[i][1], symbols[i], markersize=5,
-#		markeredgewidth=1, markeredgecolor=colours[i], 
-#                label=islands[i][3][0])
-#           errorbar(islands[i][0], islands[i][1], islands[i][2],
-#	            fmt=None,ecolor=colours[i])
-#       except:
-#           continue
-#
-#    ylabel("\\textepsilon\,$^{205}$Tl")
-#    xlabel("[Tl] (ppb)")
-#
-#    box = ax.get_position()
-#    ax.set_position([box.x0, box.y0, box.width * 0.85, box.height])
+    symbols = ['bo','g+','rx','k^','k>','k<','kv','m2', '1','3','4']
+    colours = ['b','g','r','k','k','k','k','m','0.75','0.75','0.75']
+           
+    fig = plt.figure()
+    ax = plt.subplot(111)
+ 
+    print islands.items()
 
-#    ax.legend(loc='center right', bbox_to_anchor=(1.31, 0.5), numpoints=1, markerscale=1.2,frameon=False, prop={'size':10})
+    # plot a graaaaaaaaphs
+    for i in range(len(islands)):
+       #print islands[i][0],islands[i][1],islands[i][2]
+       try:
+           ax.plot(islands[i][0], islands[i][1], symbols[i], markersize=5,
+		markeredgewidth=1, markeredgecolor=colours[i], 
+                label=islands[i][3][0])
+           errorbar(islands[i][0], islands[i][1], islands[i][2],
+	            fmt=None,ecolor=colours[i])
+       except:
+           continue
 
-#    savefig('../../../writing/graphs/epstl-tl.pdf')
+    ylabel("Cs/Tl")
+    xlabel("Ba/La")
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.85, box.height])
+
+    ax.legend(loc='center right', bbox_to_anchor=(1.31, 0.5), numpoints=1, markerscale=1.2,frameon=False, prop={'size':10})
+
+    savefig(figname)
