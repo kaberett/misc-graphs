@@ -4,7 +4,7 @@ import csv, math, sys, re, numpy, scipy, matplotlib
 from pylab import *
 rc('text', usetex=True)
 rcParams['text.latex.preamble'].append(r'\usepackage{tipa}')
-rcParams['figure.figsize'] = 8, 3.8
+#rcParams['figure.figsize'] = 8, 3.8
 
 def dataHelper(dictname,first_line, line_in,posx,posxerr,posy,posyerr):
     try:
@@ -52,7 +52,14 @@ def loadData(f,x,xerr,y,yerr):
 
     return islands
 
-
+def tidyData(dictionary):
+    for key in dictionary:
+        if len(dictionary[key]['x']) != len(dictionary[key]['y']):
+            if len(dictionary[key]['x']) < len(dictionary[key]['y']):
+                dictionary[key]['y'] = dictionary[key]['y'][:len(dictionary[key]['x'])]
+            elif len(dictionary[key]['y']) < len(dictionary[key]['x']):
+                dictionary[key]['x'] = dictionary[key]['x'][:len(dictionary[key]['y'])]
+    return dictionary
 
 if __name__ == '__main__':
 
@@ -72,39 +79,41 @@ if __name__ == '__main__':
     except IndexError:
         yerr = None
 
-    figname = raw_input("Path to save file?")
+    figname    = raw_input("Path to save file? ")
+    xAxisLabel = raw_input("X axis? Use TeX formatting. ")
+    yAxisLabel = raw_input("Y axis? ")
 
-    #print xerr, yerr
 
     ###
     # actually do the thing (damn, I'm good at comments)
     ###
     with open(file_in, 'r') as f:
         islands = loadData(f,x,xerr,y,yerr)
-        #print islands
+
+    islands = tidyData(islands)
 
     symbols = ['bo','g+','rx','k^','k>','k<','kv','m2', '1','3','4']
     colours = ['b','g','r','k','k','k','k','m','0.75','0.75','0.75']
            
     fig = plt.figure()
     ax = plt.subplot(111)
- 
-    print islands.items()
 
-    # plot a graaaaaaaaphs
-    for i in range(len(islands)):
-       #print islands[i][0],islands[i][1],islands[i][2]
-       try:
-           ax.plot(islands[i][0], islands[i][1], symbols[i], markersize=5,
-		markeredgewidth=1, markeredgecolor=colours[i], 
-                label=islands[i][3][0])
-           errorbar(islands[i][0], islands[i][1], islands[i][2],
-	            fmt=None,ecolor=colours[i])
-       except:
-           continue
+    # plot a graaaaaaaaphs (TODO deal with the not-error-handling!)
+    i = 0
+    for key in islands:
+#       print key,islands[key]['x'],islands[key]['y'],islands[key]['xerr'],islands[key]['yerr']
+       if islands[key]['x'] != []:
+           ax.plot(islands[key]['x'], islands[key]['y'], symbols[i], markersize=5,
+                   markeredgewidth=1, markeredgecolor=colours[i], label=key)
+#          errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'],
+#	            fmt=None,ecolor=colours[i])
+       if i < len(symbols)-1:
+            i += 1
+       else:
+            i = 0
 
-    ylabel("Cs/Tl")
-    xlabel("Ba/La")
+    xlabel(xAxisLabel)
+    ylabel(yAxisLabel)
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.85, box.height])
