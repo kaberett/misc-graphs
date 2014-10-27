@@ -2,6 +2,8 @@
 
 import csv, math, sys, re, numpy, scipy, matplotlib
 from pylab import *
+from matplotlib import colors
+
 rc('text', usetex=True)
 rcParams['text.latex.preamble'].append(r'\usepackage{tipa}')
 #rcParams['figure.figsize'] = 8, 3.8
@@ -74,16 +76,15 @@ def loadData(f,x,xerr,y,yerr):
 ###
 def tidyData(dictionary):
     for key in dictionary:
-        for i in dictionary[key]['x']:
-            if i == '':
-                del dictionary[key]['x'][i]
-                del dictionary[key]['y'][i]
-        for i in dictionary[key]['y']:
-            if i == '':
-                del dictionary[key]['y'][i]
-                del dictionary[key]['x'][i]
+        zipped = zip(dictionary[key]['x'], dictionary[key]['y'])
+        print zipped
+        zipped = [(x,y) for (x,y) in zipped if x!= '' and y!= '']
+        print zipped
+        try:
+            dictionary[key]['x'], dictionary[key]['y'] = zip(*zipped)
+        except ValueError:
+            print key + " had no values to unpack"
     return dictionary
-
 
 ###
 # put together a semi-replicable list of symbol types
@@ -92,22 +93,25 @@ def tidyData(dictionary):
 def generateSymbols(symbolType, dictionary):
     symbols = {}
     i = 0
-    # TODO add more symbol types!
-    markers = ['x','+','o','^','>','<','v','1','2','3','4']
-    colours = ['k','b','g','r','m']
+
+    markers = ['x','+','o','*','s','d','^','>','<','v','1','2','3','4','8']
+    colours = ['k','r','teal','silver','goldenrod','lightsteelblue','darkorchid','salmon','lightskyblue','chartreuse','saddlebrown','darkslateblue','orchid','indigo','turquoise']
     if symbolType == "islands":
         for key in dictionary:
             if key not in symbols:
-                symbols[key] = ''
-            symbols[key] += markers[i] + colours[i]
+                symbols[key] = {'marker': '', 'mfc': '', 'mec': ''}
+            symbols[key]['marker'] = markers[i]
+            symbols[key]['mfc'] = colours[i]
+            symbols[key]['mec'] = colours[i]
+            i += 1
     elif symbolType == "components":
         for key in dictionary:
             if key not in symbols:
-                symbols[key] = ''
+                symbols[key] = []
             if dictionary[key][3] == "HIMU":
                 symbols[key] += 'g'
             if dictionary[key][3] == "EMI" or dictionary[key][3] == "EMII":
-                symbols[key] += 'b'
+                symbols[key].append('b')
             symbols[key] += markers[i]
             i += 1
     print symbols        
@@ -140,7 +144,7 @@ if __name__ == '__main__':
     xAxisLabel = raw_input("X axis? Use TeX formatting. ")
     yAxisLabel = raw_input("Y axis? ")
 
-    qLegend    = raw_input("Display legend? Y/N ")
+    qLegend    = raw_input("Display legend? y/n ")
     symbolType = raw_input("Plot as islands or components? ")
 
     ###
@@ -150,7 +154,8 @@ if __name__ == '__main__':
         islands = loadData(f,x,xerr,y,yerr)
 
     islands = tidyData(islands)
-    
+    print islands
+
     symbols = generateSymbols(symbolType,islands)
     
     ###
@@ -164,21 +169,18 @@ if __name__ == '__main__':
       # print key,islands[key]['x'],islands[key]['y'],islands[key]['xerr'],islands[key]['yerr']
        #TODO think about what to /actually/ do wrt choosing symbols! does what I've stuck in work?
        if islands[key]['x'] != []:
-           ax.plot(islands[key]['x'], islands[key]['y'], symbols[islands[key]], markersize=10,
-                   markeredgewidth=1, markeredgecolor=colours[i], label=key)
+           for i in range(len(islands[key]['x'])):
+               ax.plot(islands[key]['x'][i], islands[key]['y'][i], symbols[key]['marker'], markersize=10,
+                       markeredgewidth=1, mfc = symbols[key]['mfc'], mec = symbols[key]['mec'], label=key)
          # errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'],
 #	            fmt=None,ecolor=colours[i])
-       if i < len(symbols)-1:
-            i += 1
-       else:
-            i = 0
 
 #    fill([0,40,40,0],[8000,8000,2000,2000], 'b', alpha=0.1) 
 
     xlabel(xAxisLabel)
     ylabel(yAxisLabel)
 
-    if qLegend == "Y":
+    if qLegend == "y":
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.85, box.height])
         ax.legend(loc='center right', bbox_to_anchor=(1.31, 0.5), numpoints=1, markerscale=1.2,frameon=False, prop={'size':10})
