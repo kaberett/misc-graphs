@@ -77,12 +77,12 @@ def loadData(f,x,xerr,y,yerr):
 def tidyData(dictionary):
     for key in dictionary:
         zipped = zip(dictionary[key]['x'], dictionary[key]['y'])
-        print zipped
         zipped = [(x,y) for (x,y) in zipped if x!= '' and y!= '']
-        print zipped
+        mustelidae = [list(badger) for badger in zip(*zipped)]
         try:
-            dictionary[key]['x'], dictionary[key]['y'] = zip(*zipped)
-        except ValueError:
+            dictionary[key]['x'] = mustelidae[0]
+            dictionary[key]['y'] = mustelidae[1]
+        except IndexError:
             print key + " had no values to unpack"
     return dictionary
 
@@ -107,12 +107,14 @@ def generateSymbols(symbolType, dictionary):
     elif symbolType == "components":
         for key in dictionary:
             if key not in symbols:
-                symbols[key] = []
-            if dictionary[key][3] == "HIMU":
-                symbols[key] += 'g'
-            if dictionary[key][3] == "EMI" or dictionary[key][3] == "EMII":
-                symbols[key].append('b')
-            symbols[key] += markers[i]
+                symbols[key] = {'marker': '', 'mfc': '', 'mec': ''}
+            if dictionary[key]['type'] == "HIMU":
+                symbols[key]['mec'] = 'g'
+                symbols[key]['mfc'] = 'g'
+            if dictionary[key]['type'] == "EMI" or dictionary[key]['type'] == "EMII":
+                symbols[key]['mec'] = 'b'
+                symbols[key]['mfc'] = 'b'
+            symbols[key]['marker'] = markers[i]
             i += 1
     print symbols        
     return symbols
@@ -159,21 +161,21 @@ if __name__ == '__main__':
     symbols = generateSymbols(symbolType,islands)
     
     ###
+    # TODO this should probably be broken out into its own function
     # plot a graaaaaaph (TODO deal with the not-error-handling!)
     ###
     i = 0
     fig = plt.figure()
     ax = plt.subplot(111)
-
     for key in islands:
-      # print key,islands[key]['x'],islands[key]['y'],islands[key]['xerr'],islands[key]['yerr']
+       print key
        #TODO think about what to /actually/ do wrt choosing symbols! does what I've stuck in work?
        if islands[key]['x'] != []:
            for i in range(len(islands[key]['x'])):
                ax.plot(islands[key]['x'][i], islands[key]['y'][i], symbols[key]['marker'], markersize=10,
-                       markeredgewidth=1, mfc = symbols[key]['mfc'], mec = symbols[key]['mec'], label=key)
-         # errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'],
-#	            fmt=None,ecolor=colours[i])
+                       markeredgewidth=1., markerfacecolor = symbols[key]['mfc'], markeredgecolor = symbols[key]['mec'], label=key)
+                      #errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'],
+	   #         fmt=None,ecolor=symbols[key]['mec'])
 
 #    fill([0,40,40,0],[8000,8000,2000,2000], 'b', alpha=0.1) 
 
