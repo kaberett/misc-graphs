@@ -75,16 +75,19 @@ def loadData(f,x,xerr,y,yerr):
 # make sure lists are same dimension & properly matched
 ###
 def tidyData(dictionary):
+    musteloidea = {}
     for key in dictionary:
         zipped = zip(dictionary[key]['x'], dictionary[key]['y'])
         zipped = [(x,y) for (x,y) in zipped if x!= '' and y!= '']
         mustelidae = [list(badger) for badger in zip(*zipped)]
+        musteloidea[key] = dictionary[key]
         try:
-            dictionary[key]['x'] = mustelidae[0]
-            dictionary[key]['y'] = mustelidae[1]
+            musteloidea[key]['x'] = mustelidae[0]
+            musteloidea[key]['y'] = mustelidae[1]
         except IndexError:
+            del musteloidea[key]
             print key + " had no values to unpack"
-    return dictionary
+    return musteloidea
 
 ###
 # put together a semi-replicable list of symbol types
