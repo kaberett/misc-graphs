@@ -3,6 +3,7 @@
 import csv, math, sys, re, numpy, scipy, matplotlib
 from pylab import *
 from matplotlib import colors
+from collections import OrderedDict # stackoverflow told me to do it
 
 rc('text', usetex=True)
 rcParams['text.latex.preamble'].append(r'\usepackage{tipa}')
@@ -12,6 +13,7 @@ rcParams['text.latex.preamble'].append(r'\usepackage{tipa}')
 # blocks is excessive and I can parcel them up a bit more nicely?
 
 # hello future self - line_in[0] is the island name.
+# Chris reckons I can do something intelligent with .get and ?: maybe
 def dataHelper(dictname,first_line,line_in,posx,posxerr,posy,posyerr):
     dictname[line_in[0]]["type"] = line_in[3]
     try:
@@ -78,6 +80,7 @@ def tidyData(dictionary):
     musteloidea = {}
     for key in dictionary:
         zipped = zip(dictionary[key]['x'], dictionary[key]['y'])
+        print zipped
         zipped = [(x,y) for (x,y) in zipped if x!= '' and y!= '']
         mustelidae = [list(badger) for badger in zip(*zipped)]
         musteloidea[key] = dictionary[key]
@@ -99,7 +102,7 @@ def generateSymbols(symbolType, dictionary):
 
     markers = ['x','+','o','*','s','d','^','>','<','v','1','2','3','4','8']
     colours = ['k','r','teal','silver','goldenrod','lightsteelblue','darkorchid','salmon','lightskyblue','chartreuse','saddlebrown','darkslateblue','orchid','indigo','turquoise']
-    if symbolType == "islands":
+    if symbolType == "i":
         for key in dictionary:
             if key not in symbols:
                 symbols[key] = {'marker': '', 'mfc': '', 'mec': ''}
@@ -107,7 +110,7 @@ def generateSymbols(symbolType, dictionary):
             symbols[key]['mfc'] = colours[i]
             symbols[key]['mec'] = colours[i]
             i += 1
-    elif symbolType == "components":
+    elif symbolType == "c":
         for key in dictionary:
             if key not in symbols:
                 symbols[key] = {'marker': '', 'mfc': '', 'mec': ''}
@@ -119,7 +122,6 @@ def generateSymbols(symbolType, dictionary):
                 symbols[key]['mfc'] = 'b'
             symbols[key]['marker'] = markers[i]
             i += 1
-    print symbols        
     return symbols
 
 ###
@@ -150,7 +152,7 @@ if __name__ == '__main__':
     yAxisLabel = raw_input("Y axis? ")
 
     qLegend    = raw_input("Display legend? y/n ")
-    symbolType = raw_input("Plot as islands or components? ")
+    symbolType = raw_input("Plot as islands or components? [i/c] ")
 
     ###
     # crunch all the data
@@ -165,20 +167,20 @@ if __name__ == '__main__':
     
     ###
     # TODO this should probably be broken out into its own function
-    # plot a graaaaaaph (TODO deal with the not-error-handling!)
+    # plot a graaaaaaph
     ###
-    i = 0
     fig = plt.figure()
     ax = plt.subplot(111)
     for key in islands:
-       print key
-       #TODO think about what to /actually/ do wrt choosing symbols! does what I've stuck in work?
-       if islands[key]['x'] != []:
-           for i in range(len(islands[key]['x'])):
-               ax.plot(islands[key]['x'][i], islands[key]['y'][i], symbols[key]['marker'], markersize=10,
-                       markeredgewidth=1., markerfacecolor = symbols[key]['mfc'], markeredgecolor = symbols[key]['mec'], label=key)
-                      #errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'],
-	   #         fmt=None,ecolor=symbols[key]['mec'])
+       ax.plot(islands[key]['x'], islands[key]['y'], symbols[key]['marker'], markersize=10, markeredgewidth=1,markerfacecolor = symbols[key]['mfc'], markeredgecolor = symbols[key]['mec'], label = key)
+       # TODO actually have an option on /both/ types of error bar
+       try:
+           errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'], fmt=None,ecolor=symbols[key]['mec'])
+       except:
+           # no fucks were given that day (this is probably a TODO)
+           print "FUCK ALL THIS SHITE"
+           continue
+
 
 #    fill([0,40,40,0],[8000,8000,2000,2000], 'b', alpha=0.1) 
 
@@ -186,8 +188,10 @@ if __name__ == '__main__':
     ylabel(yAxisLabel)
 
     if qLegend == "y":
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.85, box.height])
-        ax.legend(loc='center right', bbox_to_anchor=(1.31, 0.5), numpoints=1, markerscale=1.2,frameon=False, prop={'size':10})
+        ax.legend(by_label.values(), by_label.keys(), loc='center right', bbox_to_anchor=(1.31, 0.5), numpoints=1, markerscale=1.2,frameon=False, prop={'size':10})
 
 savefig(figname)
