@@ -14,6 +14,7 @@ rcParams['text.latex.preamble'].append(r'\usepackage{tipa}')
 
 # hello future self - line_in[0] is the island name.
 # Chris reckons I can do something intelligent with .get and ?: maybe
+# and subsequently suggests "if x in y" only with better var names
 def dataHelper(dictname,first_line,line_in,posx,posxerr,posy,posyerr):
     dictname[line_in[0]]["type"] = line_in[3]
     try:
@@ -80,7 +81,6 @@ def tidyData(dictionary):
     musteloidea = {}
     for key in dictionary:
         zipped = zip(dictionary[key]['x'], dictionary[key]['y'])
-        print zipped
         zipped = [(x,y) for (x,y) in zipped if x!= '' and y!= '']
         mustelidae = [list(badger) for badger in zip(*zipped)]
         musteloidea[key] = dictionary[key]
@@ -102,26 +102,80 @@ def generateSymbols(symbolType, dictionary):
 
     markers = ['x','+','o','*','s','d','^','>','<','v','1','2','3','4','8']
     colours = ['k','r','teal','silver','goldenrod','lightsteelblue','darkorchid','salmon','lightskyblue','chartreuse','saddlebrown','darkslateblue','orchid','indigo','turquoise']
+
     if symbolType == "i":
         for key in dictionary:
+            print key
             if key not in symbols:
-                symbols[key] = {'marker': '', 'mfc': '', 'mec': ''}
-            symbols[key]['marker'] = markers[i]
-            symbols[key]['mfc'] = colours[i]
-            symbols[key]['mec'] = colours[i]
-            i += 1
+                symbols[key] = {'marker': '', 'mfc': '', 'mec': '', 'markersize': 10}
+            if key == "Jenner":
+                symbols[key]['marker'] = "o"
+                symbols[key]['mec'] = "0.75"
+                symbols[key]['mfc'] = "0"
+                symbols[key]['markersize'] = 5
+            elif key == "Hawai'i":
+                symbols[key]['marker'] = 'x'
+                symbols[key]['mec'] = '0.75'
+                symbols[key]['mfc'] = '0.75'
+                symbols[key]['markersize'] = 5
+            elif key == "Azores":
+                symbols[key]['marker'] = '+'
+                symbols[key]['mec'] = '0.75'
+                symbols[key]['mfc'] = '0.75'
+                symbols[key]['markersize'] = 5
+            elif key == "Iceland":
+                symbols[key]['marker'] = '^'
+                symbols[key]['mec'] = '0.75'
+                symbols[key]['mfc'] = '0.75'    
+                symbols[key]['markersize'] = 5
+            elif key =="Mantle":
+                symbols[key]['marker'] = '*'
+                symbols[key]['mec'] = 'w'
+                symbols[key]['mfc'] = 'k'
+            else:
+                symbols[key]['marker'] = markers[i]
+                symbols[key]['mfc'] = colours[i]
+                symbols[key]['mec'] = colours[i]
+                i += 1
     elif symbolType == "c":
         for key in dictionary:
             if key not in symbols:
-                symbols[key] = {'marker': '', 'mfc': '', 'mec': ''}
+                symbols[key] = {'marker': '', 'mfc': '', 'mec': '', 'markersize': 10}
+
+            # select symbol colours by type
             if dictionary[key]['type'] == "HIMU":
-                symbols[key]['mec'] = 'g'
-                symbols[key]['mfc'] = 'g'
-            if dictionary[key]['type'] == "EMI" or dictionary[key]['type'] == "EMII":
+                symbols[key]['mec'] = 'r'
+                symbols[key]['mfc'] = 'r'
+            elif dictionary[key]['type'] == "EMI" or dictionary[key]['type'] == "EMII":
                 symbols[key]['mec'] = 'b'
                 symbols[key]['mfc'] = 'b'
-            symbols[key]['marker'] = markers[i]
-            i += 1
+            elif dictionary[key]['type'] == "mantle" or dictionary[key]['type'] == "AOC" or dictionary[key]['type'] == "FeMn":
+                symbols[key]['mec'] = 'k'
+                symbols[key]['mfc'] = 'k'
+            
+            # select symbol colours for literature data (... set type to "lit" yeah)
+            elif key == "Jenner" or key == "Hawai'i" or key == "Azores" or key == "Iceland":
+                symbols[key]['mec'] = "k"
+                symbols[key]['mfc'] = "0.75"
+                symbols[key]['markersize'] = 5
+            else:
+                symbols[key]['mfc'] = colours[i]
+                symbols[key]['mec'] = colours[i]
+ 
+            if key != "Jenner" and key != "Hawai'i" and key != "Azores" and key != "Iceland":
+                symbols[key]['marker'] = markers[i]
+                i += 1
+            elif key == "Jenner":
+                symbols[key]['marker'] = 'o'
+            elif key == "Hawai'i":
+                symbols[key]['marker'] = 'x'
+            elif key == "Iceland":
+                symbols[key]['marker'] = '^'
+            elif key == "Azores":
+                symbols[key]['marker'] = '+'
+            elif key == "Mantle":
+                symbols[key]['marker'] = '*'
+
     return symbols
 
 ###
@@ -161,8 +215,7 @@ if __name__ == '__main__':
         islands = loadData(f,x,xerr,y,yerr)
 
     islands = tidyData(islands)
-    print islands
-
+    print islands   
     symbols = generateSymbols(symbolType,islands)
     
     ###
@@ -172,17 +225,24 @@ if __name__ == '__main__':
     fig = plt.figure()
     ax = plt.subplot(111)
     for key in islands:
-       ax.plot(islands[key]['x'], islands[key]['y'], symbols[key]['marker'], markersize=10, markeredgewidth=1,markerfacecolor = symbols[key]['mfc'], markeredgecolor = symbols[key]['mec'], label = key)
+       ax.plot(islands[key]['x'], islands[key]['y'], symbols[key]['marker'], markersize=symbols[key]['markersize'], markeredgewidth=1,markerfacecolor = symbols[key]['mfc'], markeredgecolor = symbols[key]['mec'], label = key)
        # TODO actually have an option on /both/ types of error bar
        try:
-           errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'], fmt=None,ecolor=symbols[key]['mec'])
+           errorbar(islands[key]['x'], islands[key]['y'], xerr = islands[key]['xerr'], fmt=None,ecolor=symbols[key]['mec'])
        except:
            # no fucks were given that day (this is probably a TODO)
-           print "FUCK ALL THIS SHITE"
+           print "No x error-bar values provided."
            continue
 
+#       try:
+#           errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'], fmt=None,ecolor=symbols[key]['mec'])
+#       except:
+           # no fucks were given that day (this is probably a TODO)
+#           print "No y error-bar values provided."
+#           continue
 
-#    fill([0,40,40,0],[8000,8000,2000,2000], 'b', alpha=0.1) 
+
+#    fill([25,25,0,0],[2,8,8,2], 'b', alpha=0.1) 
 
     xlabel(xAxisLabel)
     ylabel(yAxisLabel)
