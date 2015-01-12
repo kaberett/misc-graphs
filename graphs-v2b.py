@@ -15,26 +15,33 @@ rcParams['text.latex.preamble'].append(r'\usepackage{tipa}')
 # hello future self - line_in[0] is the island name.
 # Chris reckons I can do something intelligent with .get and ?: maybe
 # and subsequently suggests "if x in y" only with better var names
-def dataHelper(dictname,first_line,line_in,posx,posxerr,posy,posyerr):
-    dictname[line_in[0]]["type"] = line_in[3]
+def dataHelper(dictname,first_line,line_in,posx,posxerr,posy,posyerr,poseps):
+    dictname[line_in[0]]["type"]       = line_in[3]
+    dictname[line_in[0]]["marker"]     = line_in[4]   
+    dictname[line_in[0]]["mec"]        = line_in[5]  
+    dictname[line_in[0]]["mfc"]        = line_in[6]    
+    dictname[line_in[0]]["markersize"] = line_in[7]
+
     try:
         dictname[line_in[0]]["x"].append(float(line_in[posx]))
     except ValueError:
         dictname[line_in[0]]["x"].append("")
     try:
-        if posxerr is not None:
-             dictname[line_in[0]]["xerr"].append(float(line_in[posxerr]))
-    except ValueError:
+        dictname[line_in[0]]["xerr"].append(float(line_in[posxerr]))
+    except (ValueError, TypeError) as e:
         dictname[line_in[0]]["xerr"].append("")
     try:
         dictname[line_in[0]]["y"].append(float(line_in[posy]))
     except ValueError:
         dictname[line_in[0]]["y"].append("")
     try:
-        if posyerr is not None:
-            dictname[line_in[0]]["yerr"].append(float(line_in[posyerr]))
-    except ValueError:
+        dictname[line_in[0]]["yerr"].append(float(line_in[posyerr]))
+    except (ValueError, TypeError) as e:
         dictname[line_in[0]]["yerr"].append("") 
+    try:
+        dictname[line_in[0]]["EpsTl"].append(float(line_in[poseps]))
+    except ValueError:
+        dictname[line_in[0]]["EpsTl"].append("")
 
     return dictname
 
@@ -60,15 +67,16 @@ def loadData(f,x,xerr,y,yerr):
         posyerr = first_line.index(yerr)
     else:
         posyerr = None
+    poseps = first_line.index("EpsTl")
 
     # stick the data in the places
     for line in f:
         line_in = line.split(',')
         if line_in[0] not in islands and line_in[2] != '':
-            islands[line_in[0]] = {"type": '', "x": [], "xerr": [], "y": [], "yerr": []}
-            dataHelper(islands,first_line,line_in,posx,posxerr,posy,posyerr)
+            islands[line_in[0]] = {"type": '', "x": [], "xerr": [], "y": [], "yerr": [], "marker": "", "mec": [], "mfc": [], "markersize": "", "EpsTl": []}
+            dataHelper(islands,first_line,line_in,posx,posxerr,posy,posyerr,poseps)
         elif line_in[0] in islands:
-            dataHelper(islands,first_line,line_in,posx,posxerr,posy,posyerr)
+            dataHelper(islands,first_line,line_in,posx,posxerr,posy,posyerr,poseps)
         else:
             continue
 
@@ -80,103 +88,69 @@ def loadData(f,x,xerr,y,yerr):
 def tidyData(dictionary):
     musteloidea = {}
     for key in dictionary:
-        zipped = zip(dictionary[key]['x'], dictionary[key]['y'])
-        zipped = [(x,y) for (x,y) in zipped if x!= '' and y!= '']
+        zipped = zip(dictionary[key]['x'], dictionary[key]['y'], dictionary[key]['xerr'], dictionary[key]['yerr'], dictionary[key]['EpsTl'])
+        zipped = [(x,y,xerr,yerr,EpsTl) for (x,y,xerr,yerr,EpsTl) in zipped if x!= '' and y!= '']
         mustelidae = [list(badger) for badger in zip(*zipped)]
         musteloidea[key] = dictionary[key]
         try:
             musteloidea[key]['x'] = mustelidae[0]
             musteloidea[key]['y'] = mustelidae[1]
+            musteloidea[key]['xerr'] = mustelidae[2]
+            musteloidea[key]['yerr'] = mustelidae[3]
+            musteloidea[key]['EpsTl'] = mustelidae[4]
         except IndexError:
             del musteloidea[key]
             print key + " had no values to unpack"
     return musteloidea
 
-###
-# put together a semi-replicable list of symbol types
-# NB there are data structures for actual replicability
-###
 def generateSymbols(symbolType, dictionary):
     symbols = {}
-    i = 0
 
-    markers = ['x','+','o','*','s','d','^','>','<','v','1','2','3','4','8']
-    colours = ['k','r','teal','silver','goldenrod','lightsteelblue','darkorchid','salmon','lightskyblue','chartreuse','saddlebrown','darkslateblue','orchid','indigo','turquoise']
+#    markers = ['x','+','o','*','s','d','^','>','<','v','1','2','3','4','8']
+#    colours = ['k','r','teal','silver','goldenrod','lightsteelblue','darkorchid','salmon','lightskyblue','chartreuse','saddlebrown','darkslateblue','orchid','indigo','turquoise']
 
-    if symbolType == "i":
-        for key in dictionary:
-            print key
-            if key not in symbols:
-                symbols[key] = {'marker': '', 'mfc': '', 'mec': '', 'markersize': 10}
-            if key == "Jenner":
-                symbols[key]['marker'] = "o"
-                symbols[key]['mec'] = "0.75"
-                symbols[key]['mfc'] = "0"
-                symbols[key]['markersize'] = 5
-            elif key == "Hawai'i":
-                symbols[key]['marker'] = 'x'
-                symbols[key]['mec'] = '0.75'
-                symbols[key]['mfc'] = '0.75'
-                symbols[key]['markersize'] = 5
-            elif key == "Azores":
-                symbols[key]['marker'] = '+'
-                symbols[key]['mec'] = '0.75'
-                symbols[key]['mfc'] = '0.75'
-                symbols[key]['markersize'] = 5
-            elif key == "Iceland":
-                symbols[key]['marker'] = '^'
-                symbols[key]['mec'] = '0.75'
-                symbols[key]['mfc'] = '0.75'    
-                symbols[key]['markersize'] = 5
-            elif key =="Mantle":
-                symbols[key]['marker'] = '*'
-                symbols[key]['mec'] = 'w'
-                symbols[key]['mfc'] = 'k'
-            else:
-                symbols[key]['marker'] = markers[i]
-                symbols[key]['mfc'] = colours[i]
-                symbols[key]['mec'] = colours[i]
-                i += 1
-    elif symbolType == "c":
-        for key in dictionary:
-            if key not in symbols:
-                symbols[key] = {'marker': '', 'mfc': '', 'mec': '', 'markersize': 10}
-
-            # select symbol colours by type
-            if dictionary[key]['type'] == "HIMU":
-                symbols[key]['mec'] = 'r'
-                symbols[key]['mfc'] = 'r'
-            elif dictionary[key]['type'] == "EMI" or dictionary[key]['type'] == "EMII":
-                symbols[key]['mec'] = 'b'
-                symbols[key]['mfc'] = 'b'
-            elif dictionary[key]['type'] == "mantle" or dictionary[key]['type'] == "AOC" or dictionary[key]['type'] == "FeMn":
-                symbols[key]['mec'] = 'k'
-                symbols[key]['mfc'] = 'k'
-            
-            # select symbol colours for literature data (... set type to "lit" yeah)
-            elif key == "Jenner" or key == "Hawai'i" or key == "Azores" or key == "Iceland":
-                symbols[key]['mec'] = "k"
-                symbols[key]['mfc'] = "0.75"
-                symbols[key]['markersize'] = 5
-            else:
-                symbols[key]['mfc'] = colours[i]
-                symbols[key]['mec'] = colours[i]
+    for key in dictionary:
+        n = len(dictionary[key]['x'])
+        print key,  " n = ", n
+        if key not in symbols:
+            symbols[key] = {'marker': dictionary[key]['marker'], 'mfc': [dictionary[key]['mfc']]*n, 'mec': [dictionary[key]['mec']]*n, 'markersize': int(dictionary[key]['markersize'])}
  
-            if key != "Jenner" and key != "Hawai'i" and key != "Azores" and key != "Iceland":
-                symbols[key]['marker'] = markers[i]
-                i += 1
-            elif key == "Jenner":
-                symbols[key]['marker'] = 'o'
-            elif key == "Hawai'i":
-                symbols[key]['marker'] = 'x'
-            elif key == "Iceland":
-                symbols[key]['marker'] = '^'
-            elif key == "Azores":
-                symbols[key]['marker'] = '+'
-            elif key == "Mantle":
-                symbols[key]['marker'] = '*'
+        if symbolType == "i":
+            continue
+        if symbolType == "c":
+            if dictionary[key]['type'] == "HIMU":
+                symbols[key]['mec'] = ['r'] * n
+                symbols[key]['mfc'] = ['r'] * n
+            elif dictionary[key]['type'] == "EMI" or dictionary[key]['type'] == "EMII":
+                symbols[key]['mec'] = ['b'] * n
+                symbols[key]['mfc'] = ['b'] * n
+        if symbolType == "f":
+            for i in range(len(dictionary[key]['EpsTl'])-1):
+                if dictionary[key]['EpsTl'][i] <= -5:
+                    symbols[key]['mec'][i] = '#0033CC'
+                    symbols[key]['mfc'][i] = '#0033CC'
+                if dictionary[key]['EpsTl'][i] >= -5 and dictionary[key]['EpsTl'][i] <= -3:
+                    symbols[key]['mec'][i] = '#0099FF'
+                    symbols[key]['mfc'][i] = '#0099FF'
+                if dictionary[key]['EpsTl'][i] >= -3 and dictionary[key]['EpsTl'][i] <= -2:
+                    symbols[key]['mec'][i] = '#66CC99'
+                    symbols[key]['mfc'][i] = '#66CC99'
+                if dictionary[key]['EpsTl'][i] >= -2 and dictionary[key]['EpsTl'][i] <= -1:
+                    symbols[key]['mec'][i] = '#FFCC33'
+                    symbols[key]['mfc'][i] = '#FFCC33'
+                if dictionary[key]['EpsTl'][i] >= -1 and dictionary[key]['EpsTl'][i] <= 1:
+                    symbols[key]['mec'][i] = '#FF6600'
+                    symbols[key]['mfc'][i] = '#FF6600'
+                if dictionary[key]['EpsTl'][i] >= 1 and dictionary[key]['EpsTl'][i] <= 3:
+                    symbols[key]['mec'][i] = '#003300'
+                    symbols[key]['mfc'][i] = '#003300'
+                if dictionary[key]['EpsTl'][i] >=3:
+                    symbols[key]['mec'][i] = '0.5' #'#003300'
+                    symbols[key]['mfc'][i] = '0.5' #'#003300'
 
-    return symbols
+           # print symbols[key]
+
+    return symbols   
 
 ###
 # do the thing!
@@ -205,8 +179,8 @@ if __name__ == '__main__':
     xAxisLabel = raw_input("X axis? Use TeX formatting. ")
     yAxisLabel = raw_input("Y axis? ")
 
-    qLegend    = raw_input("Display legend? y/n ")
-    symbolType = raw_input("Plot as islands or components? [i/c] ")
+    qLegend    = raw_input("Display legend? [y/n] ")
+    symbolType = raw_input("Plot colours as islands, components or fractionation factors? [i/c/f] ")
 
     ###
     # crunch all the data
@@ -215,9 +189,8 @@ if __name__ == '__main__':
         islands = loadData(f,x,xerr,y,yerr)
 
     islands = tidyData(islands)
-    print islands   
     symbols = generateSymbols(symbolType,islands)
-    
+
     ###
     # TODO this should probably be broken out into its own function
     # plot a graaaaaaph
@@ -225,11 +198,13 @@ if __name__ == '__main__':
     fig = plt.figure()
     ax = plt.subplot(111)
     for key in islands:
-       ax.plot(islands[key]['x'], islands[key]['y'], symbols[key]['marker'], markersize=symbols[key]['markersize'], markeredgewidth=1,markerfacecolor = symbols[key]['mfc'], markeredgecolor = symbols[key]['mec'], label = key)
+        print len(islands[key]['x']) 
+        for i in range(len(islands[key]['x'])-1):
+            ax.plot(islands[key]['x'][i], islands[key]['y'][i], symbols[key]['marker'], markersize=symbols[key]['markersize'], markeredgewidth=1, markerfacecolor = symbols[key]['mfc'][i], markeredgecolor = symbols[key]['mec'][i], label = key)
        # TODO actually have an option on /both/ types of error bar
-       try:
+        try:
            errorbar(islands[key]['x'], islands[key]['y'], xerr = islands[key]['xerr'], fmt=None,ecolor=symbols[key]['mec'])
-       except:
+        except:
            # no fucks were given that day (this is probably a TODO)
            print "No x error-bar values provided."
            continue
