@@ -17,10 +17,11 @@ rcParams['text.latex.preamble'].append(r'\usepackage{tipa}')
 # and subsequently suggests "if x in y" only with better var names
 def dataHelper(dictname,first_line,line_in,posx,posxerr,posy,posyerr,poseps):
     dictname[line_in[0]]["type"]       = line_in[3]
-    dictname[line_in[0]]["marker"]     = line_in[4]   
-    dictname[line_in[0]]["mec"]        = line_in[5]  
-    dictname[line_in[0]]["mfc"]        = line_in[6]    
     dictname[line_in[0]]["markersize"] = line_in[7]
+    dictname[line_in[0]]["marker"]     = line_in[4]   
+    dictname[line_in[0]]["mec"].append(line_in[5])  
+    dictname[line_in[0]]["mfc"].append(line_in[6])    
+
 
     try:
         dictname[line_in[0]]["x"].append(float(line_in[posx]))
@@ -88,8 +89,8 @@ def loadData(f,x,xerr,y,yerr):
 def tidyData(dictionary):
     musteloidea = {}
     for key in dictionary:
-        zipped = zip(dictionary[key]['x'], dictionary[key]['y'], dictionary[key]['xerr'], dictionary[key]['yerr'], dictionary[key]['EpsTl'])
-        zipped = [(x,y,xerr,yerr,EpsTl) for (x,y,xerr,yerr,EpsTl) in zipped if x!= '' and y!= '']
+        zipped = zip(dictionary[key]['x'], dictionary[key]['y'], dictionary[key]['xerr'], dictionary[key]['yerr'], dictionary[key]['EpsTl'],dictionary[key]['mec'], dictionary[key]['mfc'])
+        zipped = [(x,y,xerr,yerr,EpsTl,mec,mfc) for (x,y,xerr,yerr,EpsTl,mec,mfc) in zipped if x!= '' and y!= '']
         mustelidae = [list(badger) for badger in zip(*zipped)]
         musteloidea[key] = dictionary[key]
         try:
@@ -98,6 +99,8 @@ def tidyData(dictionary):
             musteloidea[key]['xerr'] = mustelidae[2]
             musteloidea[key]['yerr'] = mustelidae[3]
             musteloidea[key]['EpsTl'] = mustelidae[4]
+            musteloidea[key]['mec'] = mustelidae[5]
+            musteloidea[key]['mfc'] = mustelidae[6]
         except IndexError:
             del musteloidea[key]
             print key + " had no values to unpack"
@@ -113,7 +116,7 @@ def generateSymbols(symbolType, dictionary):
         n = len(dictionary[key]['x'])
         print key,  " n = ", n
         if key not in symbols:
-            symbols[key] = {'marker': dictionary[key]['marker'], 'mfc': [dictionary[key]['mfc']]*n, 'mec': [dictionary[key]['mec']]*n, 'markersize': int(dictionary[key]['markersize'])}
+            symbols[key] = {'marker': dictionary[key]['marker'], 'mfc': dictionary[key]['mfc'], 'mec': dictionary[key]['mec'], 'markersize': int(dictionary[key]['markersize'])}
  
         if symbolType == "i":
             continue
@@ -198,8 +201,8 @@ if __name__ == '__main__':
     fig = plt.figure()
     ax = plt.subplot(111)
     for key in islands:
-        print len(islands[key]['x']) 
-        for i in range(len(islands[key]['x'])-1):
+        print key
+        for i in range(len(islands[key]['x'])):
             ax.plot(islands[key]['x'][i], islands[key]['y'][i], symbols[key]['marker'], markersize=symbols[key]['markersize'], markeredgewidth=1, markerfacecolor = symbols[key]['mfc'][i], markeredgecolor = symbols[key]['mec'][i], label = key)
        # TODO actually have an option on /both/ types of error bar
         try:
@@ -227,6 +230,6 @@ if __name__ == '__main__':
         by_label = OrderedDict(zip(labels, handles))
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.85, box.height])
-        ax.legend(by_label.values(), by_label.keys(), loc='center right', bbox_to_anchor=(1.31, 0.5), numpoints=1, markerscale=1.2,frameon=False, prop={'size':10})
+        ax.legend(by_label.values(), by_label.keys(), loc='center right', bbox_to_anchor=(1.33, 0.5), numpoints=1, markerscale=1.2,frameon=False, prop={'size':10})
 
 savefig(figname)
