@@ -7,7 +7,7 @@ from collections import OrderedDict # stackoverflow told me to do it
 
 rc('text', usetex=True)
 rcParams['text.latex.preamble'].append(r'\usepackage{tipa}')
-#rcParams['figure.figsize'] = 8, 3.8
+#rcParams['figure.figsize'] = 10, 8
 
 # There is surely a way to make this neater? /Surely/ four try-except
 # blocks is excessive and I can parcel them up a bit more nicely?
@@ -51,7 +51,7 @@ def dataHelper(dictname,first_line,line_in,posx,posxerr,posy,posyerr,poseps):
 ###
 def loadData(f,x,xerr,y,yerr):
     first_line = f.readline().split(',')
-
+    print first_line
     # datadict = {"St. Helena": { "type": '',  "x": [x1,...], "xerr": [xerr1,...] "y": [y1,...], 
     #                             "yerr" [yerr1,...]}, 
     #             "Gough": ...}
@@ -155,6 +155,9 @@ def generateSymbols(symbolType, dictionary):
 
     return symbols   
 
+def plotGraph(islands,symbols):
+    # currently this is a dummy function; needs stuff breaking out into it
+    return islands
 ###
 # do the thing!
 ###
@@ -204,32 +207,29 @@ if __name__ == '__main__':
         print key
         for i in range(len(islands[key]['x'])):
             ax.plot(islands[key]['x'][i], islands[key]['y'][i], symbols[key]['marker'], markersize=symbols[key]['markersize'], markeredgewidth=1, markerfacecolor = symbols[key]['mfc'][i], markeredgecolor = symbols[key]['mec'][i], label = key)
-       # TODO actually have an option on /both/ types of error bar
-        try:
-           errorbar(islands[key]['x'], islands[key]['y'], xerr = islands[key]['xerr'], fmt=None,ecolor=symbols[key]['mec'])
-        except:
-           # no fucks were given that day (this is probably a TODO)
-           print "No x error-bar values provided."
-           continue
+            try:
+                errorbar(islands[key]['x'], islands[key]['y'], xerr = islands[key]['xerr'], fmt=None,ecolor=symbols[key]['mec'][i])
+            except:
+                # no fucks were given that day (this is probably a TODO)
+                continue
 
-#       try:
-#           errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'], fmt=None,ecolor=symbols[key]['mec'])
-#       except:
-           # no fucks were given that day (this is probably a TODO)
-#           print "No y error-bar values provided."
-#           continue
+            try:
+                errorbar(islands[key]['x'], islands[key]['y'], islands[key]['yerr'], fmt=None,ecolor=symbols[key]['mec'][i])
+            except:
+                # no fucks were given that day (this is probably a TODO)
+                continue
 
 
 #    fill([25,25,0,0],[2,8,8,2], 'b', alpha=0.1) 
 
-    xlabel(xAxisLabel)
-    ylabel(yAxisLabel)
+    xlabel(xAxisLabel, fontsize=18)
+    ylabel(yAxisLabel, fontsize=18)
 
     if qLegend == "y":
         handles, labels = ax.get_legend_handles_labels()
         by_label = OrderedDict(zip(labels, handles))
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.85, box.height])
-        ax.legend(by_label.values(), by_label.keys(), loc='center right', bbox_to_anchor=(1.33, 0.5), numpoints=1, markerscale=1.2,frameon=False, prop={'size':10})
+        ax.legend(by_label.values(), by_label.keys(), loc='center right', bbox_to_anchor=(1.35, 0.5), numpoints=1, markerscale=1,frameon=False, prop={'size':15})
 
 savefig(figname)
